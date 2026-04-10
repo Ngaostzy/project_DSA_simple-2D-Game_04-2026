@@ -3,6 +3,7 @@ import pygame
 from src.settings import *
 from src.entities.player import PLAYER
 from src.entities.obstacle import OBSTACLE
+from src.core.camera import Camera
 
 def main():
     #basic settings for game start
@@ -13,8 +14,14 @@ def main():
     running = True
 
     player = PLAYER(100, 100, TILE_SIZE, TILE_SIZE)
+    camera = Camera()
 
-    ground = OBSTACLE(0, SCREEN_HEIGHT - 50, SCREEN_WIDTH, 50)
+    platforms = [
+        OBSTACLE(0, SCREEN_HEIGHT - 50, 2000, 50), 
+        OBSTACLE(300, 450, 150, 20),
+        OBSTACLE(600, 350, 150, 20),
+        OBSTACLE(1200, 250, 150, 20) 
+    ]
 
     while running:
         for event in pygame.event.get():
@@ -26,14 +33,28 @@ def main():
         
         player.update()
 
-        if player.y + player.height >= ground.y and player.vel_y > 0:
-            if player.x + player.width > ground.x and player.x < ground.x + ground.width:
-                player.y = ground.y - player.height 
-                player.vel_y = 0
+        player.is_grounded = False
+
+        
+        
+        if player.vel_y >=0:
+            for plat in platforms:
+                if player.y + player.height >= plat.y and player.y < plat.y:
+                    if player.x + player.width > plat.x and player.x < plat.x + plat.width:
+                        player.y = plat.y - player.height
+                        player.vel_y = 0
+                        player.is_grounded = True
+                        break
+        
+        camera.update(player)
 
         screen.fill(BG_COLOR)
-        ground.render(screen)
-        player.render(screen)
+
+
+        for plat in platforms:
+            plat.render(screen, camera.scroll_x)
+
+        player.render(screen, camera.scroll_x)
     
 
         pygame.display.flip()

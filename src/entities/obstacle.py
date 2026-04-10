@@ -9,6 +9,6 @@ class OBSTACLE(ENTITY):
         super().__init__(x, y, width, height)
         self.color = (100, 200, 100)
     
-    def render(self, screen):
-        rect = pygame.Rect(self.x, self.y, self.width, self.height)
+    def render(self, screen, camera_x = 0):
+        rect = pygame.Rect(self.x - camera_x, self.y, self.width, self.height)
         pygame.draw.rect(screen, self.color, rect)
