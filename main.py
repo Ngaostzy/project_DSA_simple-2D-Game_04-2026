@@ -4,6 +4,7 @@ from src.settings import *
 from src.entities.player import PLAYER
 from src.entities.obstacle import OBSTACLE
 from src.core.camera import Camera
+from src.core.level import LEVEL
 
 def main():
     #basic settings for game start
@@ -16,12 +17,7 @@ def main():
     player = PLAYER(100, 100, TILE_SIZE, TILE_SIZE)
     camera = Camera()
 
-    platforms = [
-        OBSTACLE(0, SCREEN_HEIGHT - 50, 2000, 50), 
-        OBSTACLE(300, 450, 150, 20),
-        OBSTACLE(600, 350, 150, 20),
-        OBSTACLE(1200, 250, 150, 20) 
-    ]
+    level = LEVEL("assets/maps/map.csv")
 
     while running:
         for event in pygame.event.get():
@@ -38,7 +34,7 @@ def main():
         
         
         if player.vel_y >=0:
-            for plat in platforms:
+            for plat in level.platforms:
                 if player.y + player.height >= plat.y and player.y < plat.y:
                     if player.x + player.width > plat.x and player.x < plat.x + plat.width:
                         player.y = plat.y - player.height
@@ -51,8 +47,7 @@ def main():
         screen.fill(BG_COLOR)
 
 
-        for plat in platforms:
-            plat.render(screen, camera.scroll_x)
+        level.render(screen, camera.scroll_x)
 
         player.render(screen, camera.scroll_x)
     
