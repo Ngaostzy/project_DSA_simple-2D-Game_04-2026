@@ -38,7 +38,7 @@ class LEVEL:
             FileNotFoundError: If the provided filepath does not exist.
         """
         try:
-            with open(filepath, newline= ' ', encoding="utf-8") as file:
+            with open(filepath, newline= '', encoding="utf-8") as file:
                 reader = csv.reader(file)
                 for row_index, row in enumerate(reader):
                     for col_index, val in enumerate(row):

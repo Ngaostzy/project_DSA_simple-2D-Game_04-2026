@@ -29,9 +29,18 @@ class PLAYER(ENTITY):
         self.jump_power = -10
         self.is_grounded = False
 
+        scale_factor = 0.8
+
         try:
             raw_image = pygame.image.load("assets/sprite/cat.png").convert_alpha()
-            self.image = pygame.transform.scale(raw_image, (self.width, self.height))
+
+            cat_rect = raw_image.get_bounding_rect()
+            cropped_image = raw_image.subsurface(cat_rect)
+
+            self.image = pygame.transform.scale_by(cropped_image, scale_factor)
+
+            self.width = self.image.get_width()
+            self.height = self.image.get_height()
         except FileNotFoundError:
             print("WARNING: 'cat.png' not found.")
 
