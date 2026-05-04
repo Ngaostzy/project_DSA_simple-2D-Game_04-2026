@@ -7,7 +7,7 @@ from src.core.camera import Camera
 from src.core.level import LEVEL
 
 def main():
-    #basic settings for game start
+
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Namelesscate")
