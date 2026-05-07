@@ -27,8 +27,12 @@ class PLAYER(ENTITY):
         super().__init__(x, y, width, height)
         self.speed = 5
         self.jump_power = -10
-        self.is_grounded = False
         custom_idle = [(29,0), (29,1), (29,2)]
+        
+        self.hp = 3
+        self.is_invincible = False
+        self.invincible_timer = 0
+        self.invincible_duration = 60
 
         self.scale_factor = 3
         try:
@@ -51,6 +55,10 @@ class PLAYER(ENTITY):
         Args: None
         Return: None
         """
+        if self.is_invincible:
+            self.invincible_timer -= 1
+            if self.invincible_timer <= 0:
+                self.is_invincible = False
 
         self.vel_y += GRAVITY
 
@@ -76,7 +84,28 @@ class PLAYER(ENTITY):
             self.vel_y = self.jump_power
             self.is_grounded = False
 
-        self.x += self.vel_x
-        self.y += self.vel_y
-
         self.update_animations()
+    
+    def take_damage(self, amount):
+        """
+        """
+        if not self.is_invincible:
+            self.hp -= amount
+            self.is_invincible = True
+            self.invincible_timer = self.invincible_duration # Kích hoạt khiên bất tử 1 giây
+            
+            print(f"💥 Á! Bé Mèo bị thương. HP còn: {self.hp}")
+            
+            if self.hp <= 0:
+                print("💀 GAME OVER!")
+    def render(self, screen: pygame.surface, camera_x = 0.0):
+        original_image = self.image
+
+        if self.is_invincible and (self.invincible_timer //5) %2 == 0:
+            tinted_image = self.image.copy()
+            tinted_image.fill((255, 0, 0), special_flags = pygame.BLEND_RGBA_MULT)
+            self.image = tinted_image
+
+        super().render(screen, camera_x)
+        self.image = original_image
+

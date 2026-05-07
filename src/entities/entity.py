@@ -24,6 +24,7 @@ class ENTITY:
 
         self.vel_x = 0.0
         self.vel_y = 0.0
+        self.is_grounded = False
 
         self.sprite_sheet = None
         self.animations = {}
@@ -108,3 +109,49 @@ class ENTITY:
             img_to_draw = pygame.transform.flip(self.image, True, False)
         
         screen.blit(img_to_draw, (draw_x, draw_y))
+
+    def handle_vertical_collision(self, platforms):
+        """
+        Resolves downward AABB collisions to prevent clipping through the ground.
+
+        Snaps the entity to the platform's surface, resets vertical velocity, 
+        and updates the grounded state upon impact.
+
+        Args:
+            platforms (list): Environmental objects requiring 'x', 'y', 'width', and 'height'.
+        """
+        self.y += self.vel_y
+        self.is_grounded = False
+
+        if self.vel_y >= 0:
+            for plat in platforms:
+                if self.y + self.height >= plat.y and self.y < plat.y:
+                    if self.x + self.width > plat.x and self.x < plat.x + plat.width:
+                        self.y = plat.y - self.height
+                        self.vel_y = 0
+                        self.is_grounded = True
+                        break
+
+    def handle_horizontal_collision(self, platforms):
+        """
+        Resolves horizontal AABB collisions to prevent walking through walls.
+        Snaps the entity to the left/right edges of the platform.
+        """
+        self.x += self.vel_x
+
+        if self.vel_x == 0:
+            return
+        
+        for plat in platforms:
+            if self.y + self.height > plat.y and self.y < plat.y + plat.height:
+                if self.x + self.width > plat.x and self.x < plat.x + plat.width:
+                    if self.vel_x > 0:
+                        self.x = plat.x - self.width
+                    elif self.vel_x < 0:
+                        self.x = plat.x + plat.width
+                    
+                    self.vel_x = 0 
+                    break
+                
+                
+                
