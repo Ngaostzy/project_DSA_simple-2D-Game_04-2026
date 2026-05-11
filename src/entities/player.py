@@ -1,29 +1,31 @@
+
 """
 Module containing the Player class, representing the main controllable character.
 """
+
 import pygame
 from src.entities.entity import ENTITY
 from src.settings import *
 
 class PLAYER(ENTITY):
-    """
-    The main player character, inheriting from Entity.
 
-    Attributes:
-        image (pygame.Surface): The graphical representation of the player.
-        jump_power (float): The upward velocity applied when jumping.
-        is_grounded (bool): State flag indicating if the player is resting on a surface.
+    """Represent the main controllable player character.
+
+    The player handles keyboard input, movement physics, animation updates,
+    health management, damage invincibility, and rendering.
     """
+
     def __init__(self, x: float, y: float, width: int, height: int):
-        """
-        Initializes the player entity and loads its sprite.
+
+        """Initialize the player entity, movement attributes, and animations.
 
         Args:
-            x (float): Initial X coordinate in world space.
-            y (float): Initial Y coordinate in world space.
-            width (int): Width of the character's bounding box.
-            height (int): Height of the character's bounding box.
+            x (float): Initial x-coordinate of the player in world space.
+            y (float): Initial y-coordinate of the player in world space.
+            width (int): Width of the player's collision box.
+            height (int): Height of the player's collision box.
         """
+
         super().__init__(x, y, width, height)
         self.speed = 5
         self.jump_power = -10
@@ -34,11 +36,11 @@ class PLAYER(ENTITY):
         self.invincible_timer = 0
         self.invincible_duration = 60
 
-        self.scale_factor = 3
+        self.scale_factor = 2
         try:
             self.sprite_sheet = pygame.image.load("assets/sprites/cat_sheet.png").convert_alpha()
 
-            self.animation_speeds = {'idle': 0.01, 'run': 0.2}
+            self.animation_speeds = {'idle': 0.001, 'run': 0.2}
 
             self.animations['idle'] = self.extract_custom_frames(custom_idle)
 
@@ -49,12 +51,13 @@ class PLAYER(ENTITY):
             print("WARNING: 'cat_sheet.png' not found.")
 
     def update(self) -> None:
+
+        """Update player input, movement physics, invincibility, and animation.
+
+        Applies gravity, limits falling speed, processes keyboard movement,
+        handles jumping, and advances the current animation frame.
         """
-        Updates player physics and handles keyboard inputs
-        and advances the animation.
-        Args: None
-        Return: None
-        """
+
         if self.is_invincible:
             self.invincible_timer -= 1
             if self.invincible_timer <= 0:
@@ -87,25 +90,73 @@ class PLAYER(ENTITY):
         self.update_animations()
     
     def take_damage(self, amount):
+
+        """Apply damage to the player and activate temporary invincibility.
+
+        Args:
+            amount (int): Amount of health points to subtract from the player.
         """
-        """
+
         if not self.is_invincible:
             self.hp -= amount
             self.is_invincible = True
-            self.invincible_timer = self.invincible_duration # Kích hoạt khiên bất tử 1 giây
+            self.invincible_timer = self.invincible_duration 
             
-            print(f"💥 Á! Bé Mèo bị thương. HP còn: {self.hp}")
+            print(f"Damage taken! HP remain: {self.hp}")
             
             if self.hp <= 0:
                 print("💀 GAME OVER!")
-    def render(self, screen: pygame.surface, camera_x = 0.0):
-        original_image = self.image
+    
+    def render(self, screen: pygame.Surface, camera_x=0.0, camera_y=0.0):
 
-        if self.is_invincible and (self.invincible_timer //5) %2 == 0:
-            tinted_image = self.image.copy()
-            tinted_image.fill((255, 0, 0), special_flags = pygame.BLEND_RGBA_MULT)
-            self.image = tinted_image
+        """Render the player sprite with camera offset and invincibility effect.
 
-        super().render(screen, camera_x)
-        self.image = original_image
+        Args:
+            screen (pygame.Surface): Target surface used for rendering.
+            camera_x (float): Horizontal camera scroll offset.
+            camera_y (float): Vertical camera scroll offset.
+        """
+
+        hitbox_x = self.x - camera_x
+        hitbox_y = self.y - camera_y
+
+        img_to_draw = self.image
+
+        if self.is_invincible and (self.invincible_timer // 5) % 2 == 0:
+            tinted_image = img_to_draw.copy()
+            tinted_image.fill(
+                (255, 80, 80, 255),
+                special_flags=pygame.BLEND_RGBA_MULT
+            )
+            img_to_draw = tinted_image
+
+        if not self.facing_right:
+            img_to_draw = pygame.transform.flip(img_to_draw, True, False)
+
+        sprite_width = img_to_draw.get_width()
+        sprite_height = img_to_draw.get_height()
+
+        offset_x = (self.width - sprite_width) // 2
+
+        offset_y = self.height - sprite_height
+
+        draw_x = hitbox_x + offset_x
+        draw_y = hitbox_y + offset_y
+
+        screen.blit(img_to_draw, (draw_x, draw_y))
+
+        # pygame.draw.rect(
+        #     screen,
+        #     (0, 255, 0),
+        #     pygame.Rect(hitbox_x, hitbox_y, self.width, self.height),
+        #     1
+        # )
+
+    # Debug sprite rect
+        # pygame.draw.rect(
+        #     screen,
+        #     (255, 0, 0),
+        #     pygame.Rect(draw_x, draw_y, sprite_width, sprite_height),
+        #     1   
+        # )
 

@@ -1,28 +1,73 @@
-from src.settings import *
-
 class Camera:
-    """
-    Manages the viewport camera for smooth horizontal scrolling.
-
-    This class tracks and calculates the horizontal offset required to keep 
-    a target entity (typically the player) focused on the display screen.
-    """
-    def __init__(self):
-        """
-        Initializes the Camera with a default horizontal scroll offset.
-        """
-        self.scroll_x = 0
-
-    def update(self, target):
-        """
-        Updates the camera's horizontal offset to follow the target.
-
-        Applies a smooth scrolling algorithm (linear interpolation) by moving
-        the camera a fraction of the distance toward the target's center, 
-        rather than snapping to it instantly.
+    """Manage camera scrolling based on a target within level boundaries."""
+    def __init__(self, screen_width, screen_height):
+        """Initialize the camera with screen dimensions.
 
         Args:
-            target (Entity): The entity to track. Must possess an 'x' 
-                             coordinate attribute (e.g., the Player object).
+            screen_width (int): Width of the display screen in pixels.
+            screen_height (int): Height of the display screen in pixels.
         """
-        self.scroll_x += (target.x - self.scroll_x - (SCREEN_WIDTH // 2)) /10
+        self.scroll_y = 0
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+
+    def get_target_center(self, target):
+
+        """Get the center position of a target object.
+
+        Args:
+            target (object): Object whose position is determined from rect,
+                hitbox, collision_rect, x/y/width/height, or x/y attributes.
+
+        Returns:
+            tuple[int, int]: The x and y coordinates of the target center.
+
+        Raises:
+            AttributeError: If the target does not contain supported position attributes.
+        """
+        if hasattr(target, "rect"):
+            return target.rect.centerx, target.rect.centery
+
+        if hasattr(target, "hitbox"):
+            return target.hitbox.centerx, target.hitbox.centery
+
+        if hasattr(target, "collision_rect"):
+            return target.collision_rect.centerx, target.collision_rect.centery
+
+        if all(hasattr(target, attr) for attr in ["x", "y", "width", "height"]):
+            return (
+                target.x + target.width // 2,
+                target.y + target.height // 2
+            )
+
+        if hasattr(target, "x") and hasattr(target, "y"):
+            return target.x, target.y
+
+        raise AttributeError(
+            "Camera không tìm được vị trí của target. "
+            "Target cần có rect, hitbox, collision_rect hoặc x/y."
+        )
+
+    def update(self, target, level_width, level_height):
+
+        """Update camera scrolling to follow a target within level boundaries.
+
+        Args:
+            target (object): Object followed by the camera.
+            level_width (int): Total width of the level in pixels.
+            level_height (int): Total height of the level in pixels.
+        """
+
+        target_center_x, target_center_y = self.get_target_center(target)
+
+        self.scroll_x = target_center_x - self.screen_width // 2
+        self.scroll_y = target_center_y - self.screen_height // 2
+
+        max_scroll_x = max(0, level_width - self.screen_width)
+        max_scroll_y = max(0, level_height - self.screen_height)
+
+        self.scroll_x = max(0, min(self.scroll_x, max_scroll_x))
+        self.scroll_y = max(0, min(self.scroll_y, max_scroll_y))
+
+        self.scroll_x = int(self.scroll_x)
+        self.scroll_y = int(self.scroll_y)

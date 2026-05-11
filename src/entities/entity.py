@@ -1,22 +1,23 @@
 import pygame
 class ENTITY:
-    """
-    Base class for all movable and interactive objects in the game.
 
-    Provides foundational attributes for spatial positioning, dimensions, 
-    and velocity. It is designed to be inherited by specific game objects 
-    (e.g., Player, Enemies) which will override the base methods.
+    """Represent a base movable and interactive game entity.
+
+    This class provides common attributes and methods for position, velocity,
+    animation, rendering, and tile-based collision handling.
     """
+
     def __init__(self, x, y, width, height):
-        """
-        Initializes the entity's spatial and kinematic properties.
+
+        """Initialize the entity position, size, motion, and animation state.
 
         Args:
-            x (float): The initial horizontal coordinate (top-left).
-            y (float): The initial vertical coordinate (top-left).
-            width (int): The logical width of the entity's bounding box.
-            height (int): The logical height of the entity's bounding box.
+            x (float): Initial x-coordinate of the entity.
+            y (float): Initial y-coordinate of the entity.
+            width (int): Width of the entity collision box.
+            height (int): Height of the entity collision box.
         """
+
         self.x = x
         self.y = y
         self.width = width
@@ -36,7 +37,18 @@ class ENTITY:
         self.facing_right = True
     
     def extract_frames(self, row, num_frames, frame_size=(32, 32)):
-        """Utility to extract a continuous row of frames."""
+
+        """Extract a sequence of animation frames from a sprite sheet row.
+
+        Args:
+            row (int): Row index in the sprite sheet.
+            num_frames (int): Number of frames to extract.
+            frame_size (tuple[int, int]): Width and height of each frame.
+
+        Returns:
+            list[pygame.Surface]: List of processed animation frames.
+        """
+
         frames = []
         f_width, f_height = frame_size
         
@@ -47,7 +59,18 @@ class ENTITY:
         return frames
     
     def extract_custom_frames(self, frame_coords : list, frame_size=(32,32)):
-        """Utility to extract specific frames from coordinates (row, col)."""
+
+        """Extract specific animation frames from sprite sheet coordinates.
+
+        Args:
+            frame_coords (list[tuple[int, int]]): List of frame positions as
+                row and column pairs.
+            frame_size (tuple[int, int]): Width and height of each frame.
+
+        Returns:
+            list[pygame.Surface]: List of processed animation frames.
+        """
+
         frames = []
         f_width, f_height = frame_size
         for row, col in frame_coords:
@@ -57,7 +80,19 @@ class ENTITY:
         return frames
     
     def _process_frame(self, x, y, w, h):
-        """Internal helper for cropping and scaling."""
+
+        """Crop, trim, and scale a frame from the sprite sheet.
+
+        Args:
+            x (int): Source x-coordinate of the frame.
+            y (int): Source y-coordinate of the frame.
+            w (int): Width of the frame.
+            h (int): Height of the frame.
+
+        Returns:
+            pygame.Surface | None: Processed frame surface, or None if processing fails.
+        """
+
         try:
             frame_ref = self.sprite_sheet.subsurface((x, y, w, h))
             frame_surface = frame_ref.copy()
@@ -70,13 +105,13 @@ class ENTITY:
 
 
     def update_animations(self):
-        """
-        Updates the internal state, physics, and logic of the entity.
 
-        This method acts as an interface and is intended to be overridden 
-        by subclasses to implement specific behaviors (e.g., applying gravity, 
-        handling inputs, or advancing animations).
+        """Update the current animation frame based on the entity state.
+
+        Advances the animation timer using the configured speed and loops the
+        animation when it reaches the final frame.
         """
+
         if self.state in self.animations:
             anim_list = self.animations[self.state]
             speed = self.animation_speeds.get(self.state, 0.1)
@@ -86,63 +121,107 @@ class ENTITY:
             self.image = anim_list[int(self.current_frame)]
 
 
-    def render(self, screen: pygame.surface, camera_x = 0.0):
-        """
-        Draws the entity onto the display surface.
-
-        This method acts as an interface and is intended to be overridden 
-        by subclasses to handle specific rendering logic, such as drawing 
-        sprites and applying camera offsets.
+    def render(self, screen: pygame.surface, camera_x = 0.0, camera_y = 0.0):
+ 
+        """Render the entity image to the screen with camera offset.
 
         Args:
-            screen (pygame.Surface): The main display surface to draw on.
+            screen (pygame.Surface): Target surface used for rendering.
+            camera_x (float): Horizontal camera offset.
+            camera_y (float): Vertical camera offset.
         """
+
         if not self.image: return
         offset_y = self.height - self.image.get_height()
         offset_x = (self.width - self.image.get_width())/2
 
         draw_x = self.x - camera_x + offset_x
-        draw_y = self.y + offset_y
+        draw_y = self.y - camera_y + offset_y
 
         img_to_draw = self.image
         if not self.facing_right:
             img_to_draw = pygame.transform.flip(self.image, True, False)
         
         screen.blit(img_to_draw, (draw_x, draw_y))
+    
+    def get_nearby_platforms(self, spatial_platforms, tile_size = 32):
 
-    def handle_vertical_collision(self, platforms):
-        """
-        Resolves downward AABB collisions to prevent clipping through the ground.
-
-        Snaps the entity to the platform's surface, resets vertical velocity, 
-        and updates the grounded state upon impact.
+        """Retrieve nearby platforms using spatial grid coordinates.
 
         Args:
-            platforms (list): Environmental objects requiring 'x', 'y', 'width', and 'height'.
+            spatial_platforms (dict[tuple[int, int], pygame.Rect]): Dictionary
+                mapping tile coordinates to platform rectangles.
+            tile_size (int): Size of each tile in pixels.
+
+        Returns:
+            list[pygame.Rect]: Platforms located near the entity.
         """
+
+        nearby_platforms = []
+
+        start_col = int(self.x // tile_size) - 1
+        end_col = int((self.x + self.width) // tile_size ) +1
+
+        start_row = int(self.y // tile_size)
+        end_row = int((self.y + self.height) // tile_size) + 4
+        
+        for col in range(start_col, end_col+1):
+            for row in range(start_row, end_row+1):
+                if (col, row) in spatial_platforms:
+                    nearby_platforms.append(spatial_platforms[(col, row)])
+        
+        return nearby_platforms
+
+    def handle_vertical_collision(self, spatial_platforms):
+
+        """Resolve vertical AABB collisions with nearby platforms.
+
+        Updates the vertical position, resets vertical velocity on collision,
+        and sets the grounded state when the entity lands on a platform.
+
+        Args:
+            spatial_platforms (dict[tuple[int, int], pygame.Rect]): Dictionary
+                mapping tile coordinates to platform rectangles.
+        """
+
         self.y += self.vel_y
         self.is_grounded = False
 
-        if self.vel_y >= 0:
-            for plat in platforms:
-                if self.y + self.height >= plat.y and self.y < plat.y:
-                    if self.x + self.width > plat.x and self.x < plat.x + plat.width:
-                        self.y = plat.y - self.height
-                        self.vel_y = 0
-                        self.is_grounded = True
-                        break
+        nearby = self.get_nearby_platforms(spatial_platforms)
 
-    def handle_horizontal_collision(self, platforms):
+        for plat in nearby:
+            if self.x + self.width > plat.x and self.x < plat.x + plat.width:
+                if self.y + self.height > plat.y and self.y < plat.y + plat.height:
+
+                    if self.vel_y > 0:
+                        self.y = plat.y - self.height 
+                        self.is_grounded = True
+                    elif self.vel_y < 0:
+                        self.y = plat.y +plat.height 
+
+                    self.vel_y = 0
+                    break
+
+    def handle_horizontal_collision(self, spatial_platforms):
+
+        """Resolve horizontal AABB collisions with nearby platforms.
+
+        Updates the horizontal position and prevents the entity from passing
+        through platform boundaries.
+
+        Args:
+            spatial_platforms (dict[tuple[int, int], pygame.Rect]): Dictionary
+                mapping tile coordinates to platform rectangles.
         """
-        Resolves horizontal AABB collisions to prevent walking through walls.
-        Snaps the entity to the left/right edges of the platform.
-        """
+
         self.x += self.vel_x
 
         if self.vel_x == 0:
             return
         
-        for plat in platforms:
+        nearby = self.get_nearby_platforms(spatial_platforms)
+
+        for plat in nearby:
             if self.y + self.height > plat.y and self.y < plat.y + plat.height:
                 if self.x + self.width > plat.x and self.x < plat.x + plat.width:
                     if self.vel_x > 0:
