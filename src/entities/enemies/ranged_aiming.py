@@ -98,7 +98,7 @@ class AIMING_ENEMY(ENEMY_BASE):
             dist_y (float): The vertical scalar distance to the target.
         """ 
         distance = math.hypot(dist_x, dist_y)
-        if distance == 0: return 
+        distance = max(distance, 0.00001)
         
         bullet_speed = 7.0 
         vel_x = (dist_x / distance) * bullet_speed

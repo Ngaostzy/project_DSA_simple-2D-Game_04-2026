@@ -17,9 +17,10 @@ from src.entities.spikes import SPIKE
 
 class Game:
     """Orchestrates the primary application loop, state machine transitions, and subsystem integrations."""
-    def __init__(self):
+    def __init__(self, level_path = "assets/maps/map_3.0.ldtk"):
         """Initializes the SDL display surface, core managers, and pre-loads initial GUI assets."""
         pygame.init()
+        self.level_path = level_path
 
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Nameless Cat - Project")
@@ -55,7 +56,7 @@ class Game:
         """Reconstructs the level topology and populates entities based on spatial map data."""
         self.game_state = "PLAYING"
 
-        self.level = LEVEL("assets/maps/map_3.0.ldtk")
+        self.level = LEVEL(self.level_path)
 
         px, py = self.level.spawn_points["Player"]
         self.player = PLAYER(px, py, 32, 32)

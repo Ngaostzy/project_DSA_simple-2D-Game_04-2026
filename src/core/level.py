@@ -130,6 +130,9 @@ class LEVEL:
 
         int_grid = layer.get("intGridCsv", [])
 
+        if len(int_grid) > 0 and len(int_grid) % grid_width != 0:
+            raise RuntimeError(f"[DATA CORRUPTED] Data integrity error: The length of the 1D array ({len(int_grid)}) does not match the map width ({grid_width}). The JSON file may have been tampered with!")
+
         for index, value in enumerate(int_grid):
             if value > 0:
                 col = index % grid_width

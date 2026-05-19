@@ -60,7 +60,9 @@ class ENEMY_BASE(ENTITY):
 
         if self.is_grounded and self.vel_x != 0:
             sensor_x = self.x + self.width + 5 if self.vel_x >0 else self.x - 5
-            sensor_rect = pygame.Rect(sensor_x, self.y + self.height, 2, 100)
+            MAX_DROP_TILES = 3
+            sensor_length = MAX_DROP_TILES * TILE_SIZE + 4
+            sensor_rect = pygame.Rect(sensor_x, self.y + self.height, 2, sensor_length)
 
             has_floor_ahead = False
             for plat in nearby:
